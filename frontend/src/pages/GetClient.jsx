@@ -143,6 +143,7 @@ const GetClients = () => {
   const [showTodayNotification, setShowTodayNotification] = useState(false)
   const [todayFollowUps, setTodayFollowUps] = useState([])
   const [hotLeads, setHotLeads] = useState(false);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const [followUpData, setFollowUpData] = useState({
     remark: "",
@@ -169,7 +170,7 @@ const GetClients = () => {
 
   const fetchClients = async () => {
     try {
-      const res = await fetch("http://localhost:3004/api/client/get")
+      const res = await fetch(`${API_BASE_URL}/api/client/get`)
       const data = await res.json()
       if (res.ok) setClients(data)
       else setError(data.message || "Failed to fetch clients.")
@@ -184,7 +185,7 @@ const GetClients = () => {
   const handleDelete = async (id, fromNotification = false) => {
     setActionLoading(id)
     try {
-      const res = await fetch(`http://localhost:3004/api/client/delete/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/client/delete/${id}`, {
         method: "DELETE",
       })
       if (res.ok) {
@@ -205,7 +206,7 @@ const GetClients = () => {
     e.preventDefault()
     setActionLoading(editClient._id)
     try {
-      const res = await fetch(`http://localhost:3004/api/client/edit/${editClient._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/client/edit/${editClient._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editClient),
@@ -229,7 +230,7 @@ const GetClients = () => {
     e.preventDefault()
     setActionLoading(followUpClient._id)
     try {
-      const res = await fetch(`http://localhost:3004/api/client/followup/${followUpClient._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/client/followup/${followUpClient._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(followUpData),

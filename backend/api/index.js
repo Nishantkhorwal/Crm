@@ -23,8 +23,10 @@ const server = createServer(app);
 
 // CORS Configuration (Must be on Top)
 const allowedOrigins = [
+  "https://crm.pravasa.org.in",
   "http://localhost:5173",
   "http://localhost:5174",
+  
 ];
 
 app.use(cors({

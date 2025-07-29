@@ -19,6 +19,7 @@ const CreateClientForm = () => {
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const validateForm = () => {
     const newErrors = {}
@@ -55,7 +56,7 @@ const CreateClientForm = () => {
     setMessage("")
 
     try {
-      const res = await fetch("http://localhost:3004/api/client/create", {
+      const res = await fetch(`${API_BASE_URL}/api/client/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

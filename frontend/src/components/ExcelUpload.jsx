@@ -8,6 +8,7 @@ const ExcelUpload = () => {
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleDrag = (e) => {
     e.preventDefault()
@@ -66,7 +67,7 @@ const ExcelUpload = () => {
     formData.append("file", file)
 
     try {
-      const res = await fetch("http://localhost:3004/api/client/upload-excel", {
+      const res = await fetch(`${API_BASE_URL}/api/client/upload-excel`, {
         method: "POST",
         body: formData,
       })
