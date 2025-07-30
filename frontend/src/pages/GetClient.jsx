@@ -143,6 +143,18 @@ const GetClients = () => {
   const [showTodayNotification, setShowTodayNotification] = useState(false)
   const [todayFollowUps, setTodayFollowUps] = useState([])
   const [hotLeads, setHotLeads] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [perPage] = useState(20); // You can make this configurable if needed
+  const [stats, setStats] = useState({
+  today: 0,
+  overdue: 0,
+  thisWeek: 0,
+  pravasa: 0,
+  hotLeads: 0
+});
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [statusCountMap, setStatusCountMap] = useState({});
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const [followUpData, setFollowUpData] = useState({
@@ -153,12 +165,6 @@ const GetClients = () => {
   useEffect(() => {
     fetchClients()
   }, [])
-
-  const statusCountMap = clients.reduce((acc, client) => {
-    const status = client.status || "Unassigned";
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {});
   
 
   useEffect(() => {
@@ -168,20 +174,138 @@ const GetClients = () => {
     }
   }, [clients])
 
-  const fetchClients = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/client/get`)
-      const data = await res.json()
-      if (res.ok) setClients(data)
-      else setError(data.message || "Failed to fetch clients.")
-    } catch (err) {
-      setError("No Leads.")
-      console.error(err)
-    } finally {
-      setLoading(false)
+  // const fetchClients = async () => {
+  //   try {
+  //     const res = await fetch(`${API_BASE_URL}/api/client/get`)
+  //     const data = await res.json()
+  //     if (res.ok) setClients(data)
+  //     else setError(data.message || "Failed to fetch clients.")
+  //   } catch (err) {
+  //     setError("No Leads.")
+  //     console.error(err)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
+  const fetchClients = async (pageNumber = 1) => {
+  try {
+    setLoading(true);
+    
+    // Build query params
+    const params = new URLSearchParams({
+      page: pageNumber,
+      limit: perPage,
+      ...(searchTerm && { search: searchTerm }),
+      ...(statusFilter !== 'All' && { status: statusFilter }),
+      ...(hotLeadFilter !== 'All' && { hotLead: hotLeadFilter }),
+      ...(dateFilter !== 'all' && { dateFilter: dateFilter }),
+      ...(dateFilter === 'custom' && { 
+        fromDate: customFromDate, 
+        toDate: customToDate 
+      })
+    });
+
+    
+
+    const res = await fetch(`${API_BASE_URL}/api/client/get?${params}`);
+    const data = await res.json();
+    console.log("data",data)
+    
+    if (res.ok) {
+      setClients(data.clients);
+      setTotalPages(data.totalPages || 1);
+      setPage(data.page || 1);
+      setStats(data.stats || {
+        today: 0,
+        overdue: 0,
+        thisWeek: 0,
+        pravasa: 0,
+        hotLeads: 0
+      });
+      setTotalLeads(data.total || 0);
+      setStatusCountMap(data.statusCounts || {});
+    } else {
+      setError(data.message || "Failed to fetch clients.");
     }
+  } catch (err) {
+    setError("No Leads.");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const PaginationControls = () => {
+  const maxVisiblePages = 5; // How many page numbers to show at once
+  
+  // Calculate range of pages to display
+  let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  
+  // Adjust if we're at the end
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
   }
 
+  return (
+    <div className="flex items-center justify-center mt-6 space-x-1">
+      {/* Previous Button */}
+      <button
+        onClick={() => page > 1 && fetchClients(page - 1)}
+        disabled={page === 1}
+        className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        &laquo;
+      </button>
+      
+      {/* First Page */}
+      {startPage > 1 && (
+        <>
+          <button
+            onClick={() => fetchClients(1)}
+            className="px-3 py-1 border rounded-md"
+          >
+            1
+          </button>
+          {startPage > 2 && <span className="px-2">...</span>}
+        </>
+      )}
+      
+      {/* Page Numbers */}
+      {Array.from({ length: endPage - startPage + 1 }, (_, i) => (
+        <button
+          key={startPage + i}
+          onClick={() => fetchClients(startPage + i)}
+          className={`px-3 py-1 border rounded-md ${page === startPage + i ? 'bg-blue-500 text-white' : ''}`}
+        >
+          {startPage + i}
+        </button>
+      ))}
+      
+      {/* Last Page */}
+      {endPage < totalPages && (
+        <>
+          {endPage < totalPages - 1 && <span className="px-2">...</span>}
+          <button
+            onClick={() => fetchClients(totalPages)}
+            className="px-3 py-1 border rounded-md"
+          >
+            {totalPages}
+          </button>
+        </>
+      )}
+      
+      {/* Next Button */}
+      <button
+        onClick={() => page < totalPages && fetchClients(page + 1)}
+        disabled={page === totalPages}
+        className="px-3 py-1 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        &raquo;
+      </button>
+    </div>
+  );
+};
   const handleDelete = async (id, fromNotification = false) => {
     setActionLoading(id)
     try {
@@ -248,39 +372,55 @@ const GetClients = () => {
   }
 
   const filteredClients = clients.filter((client) => {
-    const matchesSearch =
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone?.includes(searchTerm)
-    const matchesStatus = statusFilter === "All" || client.status === statusFilter
-    const matchesHotLead =
+  const matchesSearch =
+    (client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+    (client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+    (client.phone?.includes(searchTerm) ?? false);
+
+  const matchesStatus =
+    statusFilter === "All" || client.status === statusFilter;
+
+  const matchesHotLead =
     hotLeadFilter === "All" ||
     (hotLeadFilter === "Yes" && client.hotLead === true) ||
     (hotLeadFilter === "No" && client.hotLead === false);
 
-    let matchesDate = true
-    switch (dateFilter) {
-      case "today":
-        matchesDate = isToday(client.nextTaskDate)
-        break
-      case "overdue":
-        matchesDate = isOverdue(client.nextTaskDate)
-        break
-      case "thisWeek":
-        matchesDate = isThisWeek(client.nextTaskDate)
-        break
-      case "thisMonth":
-        matchesDate = isThisMonth(client.nextTaskDate)
-        break
-      default:
-        matchesDate = true
-    }
+  let matchesDate = true;
+  switch (dateFilter) {
+    case "today":
+      matchesDate = isToday(client.nextTaskDate);
+      break;
+    case "overdue":
+      matchesDate = isOverdue(client.nextTaskDate);
+      break;
+    case "thisWeek":
+      matchesDate = isThisWeek(client.nextTaskDate);
+      break;
+    case "thisMonth":
+      matchesDate = isThisMonth(client.nextTaskDate);
+      break;
+    default:
+      matchesDate = true;
+  }
 
-    return matchesSearch && matchesStatus && matchesDate && matchesHotLead
-  })
+  return matchesSearch && matchesStatus && matchesDate && matchesHotLead;
+});
 
-  const ClientRow = ({ client, fromNotification = false }) => (
+
+  const ClientRow = ({ client,index, fromNotification = false }) => (
     <tr className="hover:bg-gray-50 transition-colors duration-150">
+      {/* <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10">
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <User className="h-5 w-5 text-blue-600" />
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-semibold text-gray-900">{index+1}</div>
+          </div>
+        </div>
+      </td> */}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
@@ -388,6 +528,19 @@ const GetClients = () => {
       </td>
     </tr>
   )
+  // Initial load and when filters change
+// Initial load and when filters change
+useEffect(() => {
+  fetchClients(1); // Reset to first page when filters change
+}, [searchTerm, statusFilter, hotLeadFilter, dateFilter]);
+
+// Load more when page changes
+// useEffect(() => {
+//   if (page > 1) {
+//     fetchClients(page);
+//   }
+// }, [page]);
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -446,10 +599,12 @@ const GetClients = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {todayFollowUps.map((client) => (
-                      <ClientRow key={client._id} client={client} fromNotification={true} />
+                    {todayFollowUps.map((client,index) => (
+                      <ClientRow index={index} key={client._id} client={client} fromNotification={true} />
                     ))}
                   </tbody>
+                  
+
                 </table>
               </div>
             </div>
@@ -491,7 +646,7 @@ const GetClients = () => {
                 </button>
               )}
               <div className="bg-blue-50 px-4 py-2 rounded-lg">
-                <span className="text-sm font-medium text-blue-700">Total Leads: {clients.length}</span>
+                <span className="text-sm font-medium text-blue-700">Total Leads: {totalLeads}</span>
               </div>
             </div>
           </div>
@@ -540,7 +695,7 @@ const GetClients = () => {
                     <option value="All">All Status</option>
                     {statusOptions.map((status) => (
                       <option key={status} value={status}>
-                        {status} ({statusCountMap[status] || 0})
+                        {status} ({statusCountMap[status] ?? 0})
                       </option>
                     ))}
 
@@ -570,31 +725,31 @@ const GetClients = () => {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 pt-6 border-t border-gray-200">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {clients.filter((c) => isToday(c.nextTaskDate)).length}
+                {stats.today}
               </div>
               <div className="text-xs text-gray-500">Today</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">
-                {clients.filter((c) => isOverdue(c.nextTaskDate)).length}
+                {stats.overdue}
               </div>
               <div className="text-xs text-gray-500">Overdue</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-amber-600">
-                {clients.filter((c) => isThisWeek(c.nextTaskDate)).length}
+                {stats.thisWeek}
               </div>
               <div className="text-xs text-gray-500">This Week</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {clients.filter((c) => c.status === "Pravasa Lead").length}
+                {stats.pravasa}
               </div>
               <div className="text-xs text-gray-500">Pravasa Lead</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {clients.filter((c) => c.hotLead === true).length}
+                {stats.hotLeads}
               </div>
               <div className="text-xs text-gray-500">Hot Lead</div>
             </div>
@@ -645,11 +800,13 @@ const GetClients = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredClients.map((client) => (
-                    <ClientRow key={client._id} client={client} />
+                  {clients.map((client,index) => (
+                    <ClientRow index={index} key={client._id} client={client} />
                   ))}
                 </tbody>
+                
               </table>
+              {totalPages > 1 && <PaginationControls />}
 
               {filteredClients.length === 0 && (
                 <div className="text-center py-12">

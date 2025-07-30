@@ -14,7 +14,6 @@ const InteractionSchema = new mongoose.Schema({
 const ClientSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
   },
   source: String,              // e.g., Website, Instagram
   leadDated: Date,             // Lead received date

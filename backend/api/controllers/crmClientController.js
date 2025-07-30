@@ -98,20 +98,178 @@ export const createSingleClient = async (req, res) => {
 
 
 // GET /api/clients
+// export const getAllClients = async (req, res) => {
+//   try {
+//     // Get page and limit from query params or set default
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 20;
+
+//     const skip = (page - 1) * limit;
+
+//     // Fetch paginated data
+//     const clients = await CrmClient.find()
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limit);
+
+//     // Get total count for frontend to know how many pages exist
+//     const total = await CrmClient.countDocuments();
+
+//     res.status(200).json({
+//       clients,
+//       total,
+//       page,
+//       totalPages: Math.ceil(total / limit)
+//     });
+//   } catch (error) {
+//     console.error("Error fetching clients:", error);
+//     res.status(500).json({ error: "Failed to fetch clients" });
+//   }
+// };
 export const getAllClients = async (req, res) => {
   try {
-    const clients = await CrmClient.find().sort({ createdAt: -1 });
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
 
-    // if (clients.length === 0) {
-    //   return res.status(200).json({ message: "No clients found", clients: [] });
-    // }
+    // Get filter parameters
+    const { 
+      search, 
+      status, 
+      hotLead, 
+      dateFilter
+    } = req.query;
 
-    res.status(200).json(clients);
+    // Build the base query
+    let query = {};
+
+    // Search filter (name, email, or phone)
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search } }
+      ];
+    }
+
+    // Status filter
+    if (status && status !== 'All') {
+      query.status = status;
+    }
+
+    // Hot lead filter
+    if (hotLead && hotLead !== 'All') {
+      query.hotLead = hotLead === 'Yes';
+    }
+
+    // Date filters
+    if (dateFilter) {
+      const now = new Date();
+      const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+
+      switch (dateFilter) {
+        case 'today':
+          query.nextTaskDate = { $gte: startOfDay, $lte: endOfDay };
+          break;
+        case 'overdue':
+          query.nextTaskDate = { $lt: startOfDay };
+          break;
+        case 'thisWeek':
+          const startOfWeek = new Date();
+          startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+          startOfWeek.setHours(0, 0, 0, 0);
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          endOfWeek.setHours(23, 59, 59, 999);
+          query.nextTaskDate = { $gte: startOfWeek, $lte: endOfWeek };
+          break;
+        case 'thisMonth':
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          endOfMonth.setHours(23, 59, 59, 999);
+          query.nextTaskDate = { $gte: startOfMonth, $lte: endOfMonth };
+          break;
+      }
+    }
+
+    // Fetch paginated data with filters
+    const clients = await CrmClient.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count with the same filters
+    const total = await CrmClient.countDocuments(query);
+
+    // Get counts for stats
+    const todayCount = await CrmClient.countDocuments({
+      ...query,
+      nextTaskDate: {
+        $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        $lte: new Date(new Date().setHours(23, 59, 59, 999))
+      }
+    });
+
+    const overdueCount = await CrmClient.countDocuments({
+      ...query,
+      nextTaskDate: { $lt: new Date(new Date().setHours(0, 0, 0, 0)) }
+    });
+
+    const thisWeekCount = await CrmClient.countDocuments({
+      ...query,
+      nextTaskDate: {
+        $gte: new Date(new Date().setDate(new Date().getDate() - new Date().getDay())),
+        $lte: new Date(new Date().setDate(new Date().getDate() - new Date().getDay() + 6))
+      }
+    });
+
+    const pravasaCount = await CrmClient.countDocuments({
+      ...query,
+      status: "Pravasa Lead"
+    });
+
+    const hotLeadCount = await CrmClient.countDocuments({
+      ...query,
+      hotLead: true
+    });
+    const statusCounts = await CrmClient.aggregate([
+      { $match: query }, // Apply the same filters
+      { 
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Convert to object format
+    const statusCountMap = {};
+    statusCounts.forEach(item => {
+      statusCountMap[item._id] = item.count;
+    });
+
+    res.status(200).json({
+      clients,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      stats: {
+        today: todayCount,
+        overdue: overdueCount,
+        thisWeek: thisWeekCount,
+        pravasa: pravasaCount,
+        hotLeads: hotLeadCount
+      },
+      statusCounts: statusCountMap
+    });
   } catch (error) {
     console.error("Error fetching clients:", error);
     res.status(500).json({ error: "Failed to fetch clients" });
   }
 };
+
 
 
 
