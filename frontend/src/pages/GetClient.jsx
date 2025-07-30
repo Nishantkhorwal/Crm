@@ -428,8 +428,8 @@ const GetClients = () => {
               <User className="h-5 w-5 text-blue-600" />
             </div>
           </div>
-          <div className="ml-4">
-            <div className="text-sm font-semibold text-gray-900">{client.name}</div>
+          <div onClick={() => setSelectedClient(client)} className="ml-4">
+            <div className="text-sm font-semibold cursor-pointer text-gray-900">{client.name}</div>
           </div>
         </div>
       </td>
