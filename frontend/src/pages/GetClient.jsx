@@ -486,13 +486,6 @@ const GetClients = () => {
           <span className="text-sm text-gray-400">No activity</span>
         )}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        {client.hotLead && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300">
-            🔥 Hot
-          </span>
-        )}
-      </td>
 
       <td className="px-6 py-4 whitespace-nowrap text-right">
         <div className="flex items-center justify-end space-x-2">
@@ -653,7 +646,7 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="max-w-full mx-0  sm:px-6  py-8">
+      <div className="max-w-full mx-0 px-2  py-8">
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -790,9 +783,6 @@ useEffect(() => {
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Activity
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Lead Status
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Actions
