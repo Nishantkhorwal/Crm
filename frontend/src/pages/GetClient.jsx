@@ -409,19 +409,7 @@ const GetClients = () => {
 
   const ClientRow = ({ client,index, fromNotification = false }) => (
     <tr className="hover:bg-gray-50 transition-colors duration-150">
-      {/* <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 h-10 w-10">
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <User className="h-5 w-5 text-blue-600" />
-            </div>
-          </div>
-          <div className="ml-4">
-            <div className="text-sm font-semibold text-gray-900">{index+1}</div>
-          </div>
-        </div>
-      </td> */}
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-2 py-4 whitespace-nowrap">
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
             <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -429,20 +417,20 @@ const GetClients = () => {
             </div>
           </div>
           <div onClick={() => setSelectedClient(client)} className="ml-4">
-            <div className="text-sm font-semibold cursor-pointer text-gray-900">{client.name}</div>
+            <div className="text-sm font-semibold cursor-pointer truncate max-w-[100px] text-gray-900">{client.name}</div>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="space-y-1">
           {client.phone && (
-            <div className="flex items-center text-sm text-gray-600">
+            <div className="flex items-center truncate max-w-[100px] text-sm text-gray-600">
               <Phone className="w-4 h-4 mr-2 text-gray-400" />
               {client.phone}
             </div>
           )}
           {client.email && (
-            <div className="flex items-center text-sm text-gray-600">
+            <div className="flex items-center truncate max-w-[120px] text-sm text-gray-600">
               <Mail className="w-4 h-4 mr-2 text-gray-400" />
               {client.email}
             </div>
@@ -451,14 +439,14 @@ const GetClients = () => {
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border `}
+          className={`inline-flex items-center truncate max-w-[120px] px-3 py-1 rounded-full text-xs font-medium border `}
         >
           {client.source} {client.hotLead ? "(HOT)" : ""}
         </span>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusColors[client.status]}`}
+          className={`inline-flex items-center px-3 truncate max-w-[120px] py-1 rounded-full text-xs font-medium border ${statusColors[client.status]}`}
         >
           {client.status}
         </span>
@@ -484,7 +472,7 @@ const GetClients = () => {
       <td className="px-6 py-4">
         {client.lastRemark ? (
           <div className="max-w-xs">
-            <div className="text-sm text-gray-900 truncate">{client.lastRemark}</div>
+            <div className="text-sm text-gray-900 truncate max-w-[120px]">{client.lastRemark}</div>
             <div className="text-xs text-gray-500">
               {client.interactions?.length ? formatDate(client.interactions.at(-1).date) : "-"}
             </div>
@@ -502,13 +490,6 @@ const GetClients = () => {
             title="View Remarks"
           >
             <MessageSquareText className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setFollowUpClient(client)}
-            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-150"
-            title="Add Follow-Up"
-          >
-            <Eye className="w-4 h-4" />
           </button>
           <button
             onClick={() => setEditClient(client)}
@@ -591,7 +572,7 @@ useEffect(() => {
                         Dates
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Last Activity
+                        Last Remark
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Actions
@@ -792,7 +773,7 @@ useEffect(() => {
                       Dates
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Activity
+                      Last Remark
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Actions
@@ -978,9 +959,16 @@ useEffect(() => {
                 Cancel
               </button>
               <button
+                onClick={() => setFollowUpClient(client)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                title="Add Follow-Up"
+              >
+                Add Follow Up
+              </button>
+              <button
                 type="submit"
                 disabled={actionLoading === editClient._id}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 {actionLoading === editClient._id ? (
                   <>
