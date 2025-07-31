@@ -145,7 +145,7 @@ const GetClients = () => {
   const [hotLeads, setHotLeads] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [perPage] = useState(20); // You can make this configurable if needed
+  const [perPage] = useState(50); // You can make this configurable if needed
   const [stats, setStats] = useState({
   today: 0,
   overdue: 0,
@@ -451,6 +451,13 @@ const GetClients = () => {
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border `}
+        >
+          {client.source} {client.hotLead ? "(HOT)" : ""}
+        </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span
           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusColors[client.status]}`}
         >
           {client.status}
@@ -575,6 +582,9 @@ useEffect(() => {
                         Contact
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Source
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -582,9 +592,6 @@ useEffect(() => {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Last Activity
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Lead Status
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Actions
@@ -774,6 +781,9 @@ useEffect(() => {
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Contact
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Source
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Status

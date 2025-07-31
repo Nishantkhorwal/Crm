@@ -130,7 +130,7 @@ export const getAllClients = async (req, res) => {
   try {
     // Get pagination parameters
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
 
     // Get filter parameters
