@@ -382,7 +382,13 @@ const GetClients = () => {
     setActionLoading(id)
     try {
       const res = await fetch(`${API_BASE_URL}/api/client/delete/${id}`, {
+        
         method: "DELETE",
+        headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+        
       })
       if (res.ok) {
         setClients((prev) => prev.filter((c) => c._id !== id))
@@ -404,7 +410,10 @@ const GetClients = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/client/edit/${editClient._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
         body: JSON.stringify(editClient),
       })
       if (res.ok) {
@@ -428,7 +437,10 @@ const GetClients = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/client/followup/${followUpClient._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
         body: JSON.stringify(followUpData),
       })
       if (res.ok) {
