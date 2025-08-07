@@ -14,7 +14,10 @@ import {
   User,
   Bell,
   Clock,
+  UserCheck,
+  UserPlus,
 } from "lucide-react"
+import AssignLeadModal from "../components/AssignLeadModal"
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-"
@@ -94,6 +97,23 @@ const statusOptions = [
   "Pravasa Lead"
 ];
 
+const budgetOptions = [
+  '50 lakh - 1 Cr',
+  '1 Cr - 1.5',
+  '1.5 Cr - 2.5',
+  '2.5 Cr - 3.5',
+  '3.5 Cr - 5',
+  '5+'
+]
+const locationOptions = [
+  'Dwarka Expressway',
+  'Huda Sec',
+  'New Gurgaon',
+  'Fpr road',
+  'Extension',
+  'Sohna'
+]
+
 
 const statusColors = {
   "New": "bg-blue-50 text-blue-700 border-blue-200",
@@ -153,6 +173,8 @@ const GetClients = () => {
   pravasa: 0,
   hotLeads: 0
 });
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem("user"));
   const [totalLeads, setTotalLeads] = useState(0);
   const [statusCountMap, setStatusCountMap] = useState({});
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -162,31 +184,75 @@ const GetClients = () => {
     nextTaskDate: "",
   })
 
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentAssignedTo, setCurrentAssignedTo] = useState("");
+  const [authToken, setToken] = useState(localStorage.getItem("token"));
+
+
+
   useEffect(() => {
     fetchClients()
   }, [])
   
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setUsers(data);
+      console.log("data",data)
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    }
+  };
+  const openAssignModal = (leadId, assignedToId) => {
+    setSelectedLeadId(leadId);
+    setCurrentAssignedTo(assignedToId);
+    setIsModalOpen(true);
+    setEditClient(null);
+  };
+
+  const assignLead = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/client/assign`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ leadId: selectedLeadId, userId: selectedUserId }),
+      });
+
+      if (!res.ok) throw new Error("Failed to assign lead");
+
+      setAssignModalOpen(false);
+      setSelectedUserId("");
+      // Optional: Refresh clients
+      fetchClients();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
+
 
   useEffect(() => {
     if (clients.length > 0) {
-      const todayClients = clients.filter((client) => isToday(client.nextTaskDate))
-      setTodayFollowUps(todayClients)
+      const todayClients = clients.filter(
+        (client) =>
+          isToday(client.nextTaskDate) &&
+          client.status !== "Not Interested"
+      );
+      setTodayFollowUps(todayClients);
     }
-  }, [clients])
+  }, [clients]);
 
-  // const fetchClients = async () => {
-  //   try {
-  //     const res = await fetch(`${API_BASE_URL}/api/client/get`)
-  //     const data = await res.json()
-  //     if (res.ok) setClients(data)
-  //     else setError(data.message || "Failed to fetch clients.")
-  //   } catch (err) {
-  //     setError("No Leads.")
-  //     console.error(err)
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
   const fetchClients = async (pageNumber = 1) => {
   try {
     setLoading(true);
@@ -207,7 +273,13 @@ const GetClients = () => {
 
     
 
-    const res = await fetch(`${API_BASE_URL}/api/client/get?${params}`);
+    const res = await fetch(`${API_BASE_URL}/api/client/get?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
     const data = await res.json();
     console.log("data",data)
     
@@ -370,6 +442,10 @@ const GetClients = () => {
       setActionLoading(null)
     }
   }
+  useEffect(() => {
+      fetchUsers();
+    }, []);
+
 
   const filteredClients = clients.filter((client) => {
   const matchesSearch =
@@ -462,10 +538,19 @@ const GetClients = () => {
             <Calendar className="w-4 h-4 mr-2 text-gray-400" />
             <span className="text-xs text-gray-500">Follow-up:</span>
             <span
-              className={`ml-1 ${isToday(client.nextTaskDate) ? "font-semibold text-orange-600" : isOverdue(client.nextTaskDate) ? "font-semibold text-red-600" : ""}`}
+              className={`ml-1 ${
+                isToday(client.nextTaskDate)
+                  ? "font-semibold text-orange-600"
+                  : isOverdue(client.nextTaskDate)
+                  ? "font-semibold text-red-600"
+                  : ""
+              }`}
             >
-              {formatDate(client.nextTaskDate)}
+              {client.status === "Not Interested" || !client.nextTaskDate
+                ? "No follow up"
+                : formatDate(client.nextTaskDate)}
             </span>
+
           </div>
         </div>
       </td>
@@ -498,6 +583,15 @@ const GetClients = () => {
           >
             <Pencil className="w-4 h-4" />
           </button>
+          {/* {user?.role === "admin" &&
+            <button
+              onClick={() => openAssignModal(client._id, client.assignedTo)}
+              className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-150"
+            >
+              <UserCheck className="w-4 h-4" />
+            </button>
+          } */}
+
           <button
             onClick={() => setDeleteClient(client)}
             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150"
@@ -580,7 +674,9 @@ useEffect(() => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {todayFollowUps.map((client,index) => (
+                    {todayFollowUps
+                    .filter((client) => client.status !== "Not Interested")
+                    .map((client, index) => (
                       <ClientRow index={index} key={client._id} client={client} fromNotification={true} />
                     ))}
                   </tbody>
@@ -676,7 +772,7 @@ useEffect(() => {
                     <option value="All">All Status</option>
                     {statusOptions.map((status) => (
                       <option key={status} value={status}>
-                        {status} ({statusCountMap[status] ?? 0})
+                        {status} {user?.role === "admin" ? ` (${statusCountMap[status] ?? 0})` : ""}
                       </option>
                     ))}
 
@@ -810,9 +906,24 @@ useEffect(() => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Client Remarks</h2>
-                <p className="text-sm text-gray-500 mt-1">{selectedClient.name}</p>
+              <div className="flex flex-row gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Client Remarks</h2>
+                  <p className="text-sm text-gray-500 mt-1">{selectedClient.name}</p>
+                </div>
+                <div className="">
+                   <span
+                      className={`inline-flex items-center me-2 px-3 truncate max-w-[120px] py-1 rounded-full text-xs font-medium border ${statusColors[selectedClient.status]}`}
+                    >
+                      {selectedClient.status}
+                    </span>
+                    
+                      <span
+                        className={`inline-flex items-center px-3 truncate max-w-[120px] py-1 rounded-full text-xs font-medium border`}
+                      >
+                        {selectedClient.hotLead ? "Hot" : "Not Hot"}
+                      </span>
+                </div>  
               </div>
               <button
                 onClick={() => setSelectedClient(null)}
@@ -854,10 +965,15 @@ useEffect(() => {
             className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Edit Client</h2>
+              
+                <div >
+                  <h2 className="text-xl font-semibold text-gray-900">Edit Client</h2>
+               
                 <p className="text-sm text-gray-500 mt-1">Update client information</p>
+                
               </div>
+              
+              
               <button
                 type="button"
                 onClick={() => setEditClient(null)}
@@ -865,6 +981,8 @@ useEffect(() => {
               >
                 <X className="w-5 h-5 text-gray-400" />
               </button>
+
+              
             </div>
             <div className="p-6 overflow-y-auto max-h-96">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -897,6 +1015,37 @@ useEffect(() => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter email address"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Budget</label>
+                  <select
+                    value={editClient.budget}
+                    onChange={(e) => setEditClient({ ...editClient, budget: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  > 
+                    <option value="">-- Select a budget --</option> 
+                    {budgetOptions.map((budget) => (
+                      
+                      <option key={budget} value={budget}>
+                        {budget}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <select
+                    value={editClient.location}
+                    onChange={(e) => setEditClient({ ...editClient, location: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  > 
+                    <option value="">-- Select a location --</option> 
+                    {locationOptions.map((location) => (
+                      <option key={location} value={location}>
+                        {location}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -939,6 +1088,23 @@ useEffect(() => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
+                {user?.role === "admin" &&
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assigned</label>
+                
+                      {/* <button
+                        onClick={() => openAssignModal(editClient._id, editClient.assignedTo)}
+                        className="p-2 bg-black rounded-full text-amber-400 hover:bg-black/60 text-center transition-colors duration-150"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </button> */}
+                  <p 
+                    onClick={() => openAssignModal(editClient._id, editClient.assignedTo)} 
+                    className="w-full px-4 py-3 border cursor-pointer hover:bg-red-700  border-gray-300 text-white bg-red-500 rounded-lg transition-all duration-200">
+                    {editClient.assignedTo ? `Assigned - (${editClient.assignedTo?.name})` : "Not Assigned" }
+                  </p>
+                </div>
+                }
                 {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Next Follow-up Date</label>
                   <input
@@ -1101,6 +1267,53 @@ useEffect(() => {
           </div>
         </div>
       )}
+      {assignModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Assign Lead</h2>
+
+            <select
+              className="w-full border rounded-lg p-2 mb-4"
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+            >
+              <option value="">Select a user</option>
+              {users.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name} ({user.email})
+                </option>
+              ))}
+            </select>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                onClick={() => setAssignModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={assignLead}
+                disabled={!selectedUserId}
+              >
+                Assign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <AssignLeadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        leadId={selectedLeadId}
+        users={users}
+        currentAssignedTo={currentAssignedTo}
+        token={authToken}
+        onSuccess={() => fetchClients()} // your reload function
+      />
+
+
     </div>
   )
 }

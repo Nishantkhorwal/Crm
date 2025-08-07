@@ -1,10 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiChevronRight, FiChevronLeft } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
-import { PieChart, Home, NotebookPen ,LogOut, BadgeIndianRupee, Settings } from "lucide-react"
+import { PieChart, Home, NotebookPen ,LogOut, BadgeIndianRupee, Settings, UserPlus, FileBarChart,  Send, Edit } from "lucide-react"
+
+
+
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    const userString = localStorage.getItem("user");
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        setUserRole(user.role || null);
+        console.log("role",user.role);
+      } catch (err) {
+        console.error("Invalid token");
+      }
+    }
+  }, []);
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
@@ -52,14 +69,65 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
               </button>
               </Link>
             </li>
-            <li className=''>
-              <Link to="/createClient">
-              <button className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">
-                <NotebookPen className="mr-2 h-4 w-4" />
-                Create Client
-              </button>
-              </Link>
-            </li>
+            {/* <li>
+                <Link to="/getreport">
+                  <button className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">
+                    <FileBarChart className="mr-2 h-4 w-4" />
+                    Sales Reports
+                  </button>
+                </Link>
+              </li> */}
+            {userRole === 'user' && (
+              <li>
+                <Link to="/createreport">
+                  <button className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">
+                    <NotebookPen className="mr-2 h-4 w-4" />
+                    Create Report
+                  </button>
+                </Link>
+              </li>
+            )}
+            
+            {userRole === 'admin' && (  
+              <li className=''>
+                <Link to="/createClient">
+                <button className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">
+                  <NotebookPen className="mr-2 h-4 w-4" />
+                  Create Client
+                </button>
+                </Link>
+              </li>
+            )}  
+            {/* {userRole === 'admin' && (
+              <li>
+                <Link to="/register">
+                  <button className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Register User
+                  </button>
+                </Link>
+              </li>
+            )} */}
+            {userRole === 'admin' && (
+              <li>
+                <Link to="/getUsers">
+                  <button className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">
+                    <Send className="mr-2 h-4 w-4" />
+                    Assign Lead
+                  </button>
+                </Link>
+              </li>
+            )}
+            {/* {userRole === 'admin' && (
+              <li>
+                <Link to="/editUsers">
+                  <button className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Users
+                  </button>
+                </Link>
+              </li>
+            )} */}
             <li className=''>
               
               <button onClick={handleLogout} className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">

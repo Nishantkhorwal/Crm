@@ -58,6 +58,44 @@ const ClientSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CrmUser',
+    default: null,
+  },
+  assignedTo : {
+    type : mongoose.Schema.Types.ObjectId,
+    ref: 'CrmUser',
+    default: null,
+
+  },
+  budget: {
+    type: String,
+    enum: [
+      '50 lakh - 1 Cr',
+      '1 Cr - 1.5',
+      '1.5 Cr - 2.5',
+      '2.5 Cr - 3.5',
+      '3.5 Cr - 5',
+      '5+'
+    ],
+    default: null,
+  },
+
+  location: {
+    type: String,
+    enum: [
+      'Dwarka Expressway',
+      'Huda Sec',
+      'New Gurgaon',
+      'Fpr road',
+      'Extension',
+      'Sohna'
+    ],
+    default: null,
+  },
+
+
 }, {
   timestamps: true // adds createdAt and updatedAt
 });
