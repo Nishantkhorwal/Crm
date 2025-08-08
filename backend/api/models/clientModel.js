@@ -88,12 +88,13 @@ const ClientSchema = new mongoose.Schema({
       'Dwarka Expressway',
       'Huda Sec',
       'New Gurgaon',
-      'Fpr road',
-      'Extension',
+      'Spr road',
+      'Golf Course Extension',
       'Sohna'
     ],
     default: null,
   },
+  requirement: String,
 
 
 }, {

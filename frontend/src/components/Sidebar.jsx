@@ -128,6 +128,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                 </Link>
               </li>
             )}
+            
             <li className=''>
               
               <button onClick={handleLogout} className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-100 hover:text-gray-900 hover:bg-gray-100">

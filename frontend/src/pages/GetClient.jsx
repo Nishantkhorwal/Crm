@@ -109,8 +109,8 @@ const locationOptions = [
   'Dwarka Expressway',
   'Huda Sec',
   'New Gurgaon',
-  'Fpr road',
-  'Extension',
+  'Spr road',
+  'Golf Course Extension',
   'Sohna'
 ]
 
@@ -1035,7 +1035,7 @@ useEffect(() => {
                     onChange={(e) => setEditClient({ ...editClient, budget: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   > 
-                    <option value="">-- Select a budget --</option> 
+                    <option value=" ">-- Select a budget --</option> 
                     {budgetOptions.map((budget) => (
                       
                       <option key={budget} value={budget}>
@@ -1058,6 +1058,16 @@ useEffect(() => {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Requirement</label>
+                  <input
+                    type="text"
+                    value={editClient.requirement || ""}
+                    onChange={(e) => setEditClient({ ...editClient, requirement: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter requirement"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

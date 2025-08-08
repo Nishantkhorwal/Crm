@@ -28,7 +28,7 @@ export const uploadExcel = async (req, res) => {
 
       phone: row.Phone,
       email: row.Email,
-      status: row.Status || 'New',
+      status: row.Status || 'Unassigned',
       lastRemark: row.Notes || '',
       nextTaskDate: row.FollowUp
       ? new Date(row.FollowUp).toLocaleDateString('en-GB', {
